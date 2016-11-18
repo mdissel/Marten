@@ -5,9 +5,10 @@ namespace Marten.Testing
 {
     public class ConnectionSource : ConnectionFactory
     {
-        public static readonly string ConnectionString = Environment.GetEnvironmentVariable("marten-testing-database");
+		public static readonly string ConnectionString = "User ID=postgres;Password=postgres;Host=localhost;Port=5432;Database=martentesting;";  // Environment.GetEnvironmentVariable("marten-testing-database");
 
-        static ConnectionSource()
+
+				static ConnectionSource()
         {
             if (ConnectionString.IsEmpty())
                 throw new Exception(
