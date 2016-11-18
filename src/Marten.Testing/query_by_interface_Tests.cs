@@ -1,19 +1,21 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Marten;
 using Marten.Schema;
-using Marten.Testing.Documents;
+using Marten.Services;
 using Shouldly;
 using StructureMap;
 using Xunit;
 
 namespace Marten.Testing
 {
-    public class query_by_interface_Tests
+	public class query_by_interface_Tests : DocumentSessionFixture<NulloIdentityMap>
 	{
 
 		public interface IHasAddressID
 		{
+			Guid Id { get; set; }
 			string AddressID { get; set; }
 		}
 		public class Location : IHasAddressID
@@ -37,30 +39,30 @@ namespace Marten.Testing
 		}
 
 
-		public query_by_interface_Tests()
-        {
-            using (var container = Container.For<DevelopmentModeRegistry>())
-            {
-                container.GetInstance<DocumentCleaner>().CompletelyRemoveAll();
-            }
-        }
+		public query_by_interface_Tests() {
+			using (var container = Container.For<DevelopmentModeRegistry>()) {
+				container.GetInstance<DocumentCleaner>().CompletelyRemoveAll();
+			}
+			StoreOptions(_ => {
+				_.Schema.For<IHasAddressID>()
+						.AddSubClassHierarchy(typeof(Person), typeof(Location));
 
-        [Fact]
-        public void query()
-        {
-            using (var container = Container.For<DevelopmentModeRegistry>())
-            {
-                using (var session = container.GetInstance<IDocumentStore>().OpenSession())
-                {
-                    session.Store(new Location {AddressID = "1"});
-										session.Store(new Person { AddressID = "1" });
-                    session.SaveChanges();
+			});
+		}
 
-										var addresses = session.Query<IHasAddressID>().Where(x => x.AddressID == "1").ToArray();
+		[Fact]
+		public void query() {
+			using (var container = Container.For<DevelopmentModeRegistry>()) {
+				using (var session = container.GetInstance<IDocumentStore>().OpenSession()) {
+					session.Store(new Location { AddressID = "1" });
+					session.Store(new Person { AddressID = "1" });
+					session.SaveChanges();
 
-                    addresses.Length.ShouldBe(2);
-                }
-            }
-        }
-   }
+					var addresses = session.Query<IHasAddressID>().Where(x => x.AddressID == "1").ToArray();
+
+					addresses.Length.ShouldBe(2);
+				}
+			}
+		}
+	}
 }
